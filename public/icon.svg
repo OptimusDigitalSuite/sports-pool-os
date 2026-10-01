@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Sports Pool OS">
+  <!--
+    App icon (manifest purpose "any"). Void ground, a single condensed "C"
+    stroke-mark in the hot accent — no emoji, no gradient, no team/league
+    branding (DESIGN.md §8). Colours are the sRGB resolution of --bg-void
+    (oklch(0.14 0.018 255)) and --accent-hot-600 (oklch(0.50 0.20 27)):
+    this file can't read a CSS custom property, so it hardcodes the same
+    values app/manifest.ts and app/layout.tsx derive from those tokens.
+    Drawn as a geometric arc rather than text so it renders identically
+    everywhere, independent of which fonts an OS/launcher has installed.
+  -->
+  <rect width="512" height="512" fill="#050910" />
+  <path
+    d="M 342.04 378.88 A 150 150 0 1 1 342.04 133.12"
+    fill="none"
+    stroke="#bb0916"
+    stroke-width="70"
+    stroke-linecap="butt"
+  />
+</svg>

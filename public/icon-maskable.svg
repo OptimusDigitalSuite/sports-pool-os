@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Sports Pool OS">
+  <!--
+    Maskable variant (manifest purpose "maskable") — same mark as icon.svg,
+    scaled down and centered so it survives a circular (or squircle, or
+    rounded-square) OS mask without the "C" getting clipped. The background
+    rect still fills the full canvas edge-to-edge, as maskable icons
+    require; the glyph itself sits well inside the ~40%-radius safe zone.
+    Same two hardcoded hex values as icon.svg — see that file's comment.
+  -->
+  <rect width="512" height="512" fill="#050910" />
+  <path
+    d="M 313.36 337.92 A 100 100 0 1 1 313.36 174.08"
+    fill="none"
+    stroke="#bb0916"
+    stroke-width="46"
+    stroke-linecap="butt"
+  />
+</svg>

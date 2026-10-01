@@ -1,0 +1,320 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens transcribed from DESIGN.md §2 (colour), §4 (radii), §5 (glass),
+ * and §6 (motion). DESIGN.md is the source of truth for every value below —
+ * do not hand-edit a value here without updating DESIGN.md first.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces — DESIGN.md §2. Never pure black. */
+  --bg-void: oklch(0.14 0.018 255);
+  --bg-surface: oklch(0.19 0.02 255);
+  --bg-elevated: oklch(0.23 0.022 255);
+  --bg-scrim: oklch(0.10 0.02 255);
+
+  /* Text — DESIGN.md §2 */
+  --text-primary: oklch(0.97 0.005 255);
+  --text-secondary: oklch(0.74 0.02 255);
+  --text-tertiary: oklch(0.54 0.02 255);
+  --text-disabled: oklch(0.40 0.015 255);
+
+  /* Borders & glass edges — DESIGN.md §2 */
+  --border-hairline: oklch(1 0 0 / 0.08);
+  --border-hairline-strong: oklch(1 0 0 / 0.14);
+  --glass-inner-highlight: oklch(1 0 0 / 0.06);
+
+  /* Hot accent — LIVE and WINS only — DESIGN.md §2 */
+  --accent-hot-500: oklch(0.63 0.22 27);
+  --accent-hot-600: oklch(0.50 0.20 27);
+  --accent-hot-700: oklch(0.42 0.18 27);
+  --accent-hot-dim: oklch(0.63 0.22 27 / 0.16);
+  --on-accent-hot: oklch(0.99 0 0);
+
+  /* Money amber — payouts and the ledger only, never live — DESIGN.md §2 */
+  --money-amber-500: oklch(0.80 0.15 85);
+  --money-amber-600: oklch(0.74 0.16 85);
+  --money-amber-700: oklch(0.68 0.16 85);
+  --money-amber-dim: oklch(0.80 0.15 85 / 0.14);
+  --on-money: oklch(0.20 0.03 85);
+
+  /* Neutral state — DESIGN.md §2 */
+  --state-locked: oklch(0.40 0.01 255 / 0.12);
+  --state-locked-fg: oklch(0.55 0.015 255);
+
+  /* Radii — DESIGN.md §4 */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+
+  /* Motion — DESIGN.md §6 */
+  --duration-instant: 100ms;
+  --duration-fast: 180ms;
+  --duration-base: 280ms;
+  --duration-slow: 480ms;
+  --duration-cinematic: 800ms;
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-standard: cubic-bezier(0.7, 0, 0.84, 0);
+}
+
+body {
+  background: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Everything below lives in the `components` cascade layer that
+ * `@import "tailwindcss"` already establishes (theme, base, components,
+ * utilities, ...), rather than as unlayered author styles. Tailwind v4 emits
+ * every utility class — including arbitrary ones like `p-5` — inside
+ * `@layer utilities`. Cascade-layer precedence is decided by layer order
+ * first and source order only within a layer, so an *unlayered* rule beats
+ * a layered one regardless of which appears later in the file. `.glass`
+ * used to be unlayered and set `padding: 6px`, which silently beat any
+ * `p-*` utility applied alongside it (e.g. `<Panel>`'s `p-5`) even though
+ * `p-5` appeared first in DOM/class order and later in the compiled CSS —
+ * verified against the built output (see the wave-2 fix report for the
+ * before/after `.next/static/chunks/*.css` diff). Putting these rules in
+ * `@layer components` — the layer Tailwind's own docs reserve for exactly
+ * this kind of custom, class-based component style — lets a `utilities`-layer
+ * class continue to win when a component wires one up, which is what every
+ * one of these classes is meant to allow.
+ */
+@layer components {
+  /* Tabular numerals — DESIGN.md §3. Every live-updating figure sits on this
+     so digits never reflow: scores, records, pot/payout figures, timestamps. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+  }
+
+  /* Double-Bezel glass — DESIGN.md §5. Every panel, card, modal, and the
+     pick-list container use this. The outer shell composites over the video;
+     the inner core is the readable surface inset by the bezel. Content
+     padding (DESIGN.md's 20px) belongs to whichever consumer renders the
+     inner core (see components/ui/Panel.tsx) — `.glass` itself only owns the
+     6px bezel inset, so it never fights a `p-*` utility applied to content. */
+  .glass {
+    background: var(--bg-surface);
+    backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid var(--border-hairline);
+    border-top: 1px solid var(--border-hairline-strong);
+    border-radius: var(--radius-lg);
+    box-shadow:
+      0 1px 0 0 var(--border-hairline-strong) inset,
+      0 2px 8px 0 oklch(0 0 0 / 0.35),
+      0 20px 40px -12px oklch(0 0 0 / 0.55);
+    padding: 6px;
+  }
+
+  .glass-inner {
+    background: var(--bg-elevated);
+    border-radius: calc(var(--radius-lg) - 6px);
+    box-shadow: 0 1px 0 0 var(--glass-inner-highlight) inset;
+  }
+}
+
+/* Video scrim — DESIGN.md §5, "Video scrim recipe (three states)". The
+ * VideoBackdrop component sets data-intensity; these rules supply the video
+ * filter and the scrim gradient for each state. Every alpha step is mixed
+ * from --bg-scrim (never a hardcoded colour) so the scrim tracks the token. */
+[data-video-bg] .backdrop-plate {
+  filter: brightness(0.55) saturate(85%);
+}
+[data-video-bg][data-intensity='full'] .backdrop-scrim {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--bg-scrim) 15%, transparent) 0%,
+    color-mix(in oklch, var(--bg-scrim) 55%, transparent) 55%,
+    color-mix(in oklch, var(--bg-scrim) 85%, transparent) 100%
+  );
+}
+
+[data-video-bg][data-intensity='wash'] .backdrop-plate {
+  filter: blur(6px) brightness(0.65) saturate(75%);
+}
+[data-video-bg][data-intensity='wash'] .backdrop-scrim {
+  /* Flat, high-coverage — this is the reading screen behind the pick list.
+     55%, not 75%: with the old brightness(0.35) underneath it, the wash
+     composited darker than --bg-void and the footage was invisible, and at
+     blur(20px) it was still too soft to read as football. Text
+     sitting directly on this wash must be --text-secondary or lighter
+     (DESIGN.md §5, state 2). */
+  background: color-mix(in oklch, var(--bg-scrim) 55%, transparent);
+}
+
+[data-video-bg][data-intensity='bright'] .backdrop-plate {
+  filter: brightness(0.85) saturate(120%);
+}
+[data-video-bg][data-intensity='bright'] .backdrop-scrim {
+  /* Vignette only — keep the center bright for the winner beat. */
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    color-mix(in oklch, var(--bg-scrim) 35%, transparent) 100%
+  );
+}
+
+/* Live pulse — DESIGN.md §6.4 & §7 (Pick Row, Live state). A breathing glow
+ * ring on rows marked [data-live="true"] (PickRow sets this from
+ * game.status === 'in_progress'). The ring itself (box-shadow) is fixed at
+ * its resting size — only opacity animates, per §6's "animate only
+ * transform and opacity" rule. Alternates ease-out-standard on the way up
+ * and ease-in-standard on the way down, exactly as specified. On finalize
+ * the component removes the attribute, which removes this pseudo-element
+ * outright — a hard cut, no fade-out transition, as §6.4 requires. This is
+ * the ONLY source of the pulse: components must not also apply an
+ * animate-* utility class, or the row ends up pulsing at two rates. */
+[data-live='true'] {
+  position: relative;
+}
+[data-live='true']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 1px var(--accent-hot-500);
+  opacity: 0.6;
+  pointer-events: none;
+  animation: live-pulse 2400ms infinite;
+}
+@keyframes live-pulse {
+  0% {
+    opacity: 0.6;
+    animation-timing-function: var(--ease-out-standard);
+  }
+  50% {
+    opacity: 1;
+    animation-timing-function: var(--ease-in-standard);
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+/* Score digit-roll — DESIGN.md §6.2. RollingText.tsx (rendered inside every
+ * Figure) applies this class only to the character(s) that actually changed
+ * — never the whole figure — and only when the value changed after first
+ * paint and the viewer hasn't asked for reduced motion. transform only, per
+ * §8's "animate only transform/opacity" rule. The blanket
+ * `prefers-reduced-motion` block below also collapses this to 0.01ms as a
+ * second line of defence, in case something ever applies the class outside
+ * RollingText's own JS check. */
+.animate-figure-roll {
+  animation: figure-roll var(--duration-base) var(--ease-out-standard);
+}
+@keyframes figure-roll {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* View transition group timing — DESIGN.md §6.1 (pick collapse) and §6.3
+ * (standings reorder). Both PickList.tsx and StandingsTable.tsx wrap a DOM
+ * change in document.startViewTransition() and give each row a stable but
+ * *dynamic* `view-transition-name` (`pick-${gameId}` / `standing-${playerId}`)
+ * — one per row, keyed by id, so the browser can interpolate that specific
+ * row's old and new position/state.
+ *
+ * The two families want different timing (duration-slow for the pick
+ * collapse, duration-base for a standings reorder — DESIGN.md §6 tokens), so
+ * a single blanket `::view-transition-group(*)` rule can't serve both. The
+ * obvious-looking fix, a prefix/wildcard selector like
+ * `::view-transition-group(pick-*)`, is not valid CSS: the pseudo-class only
+ * accepts a literal name or `*` — no wildcard/prefix matching — and the
+ * per-row names are generated at render time from IDs we don't know in
+ * advance, so we can't enumerate them as literal rules either.
+ *
+ * Instead each row also sets `view-transition-class` (CSS View Transitions
+ * Level 2) to a *static* class shared by every row in its family — `pick` or
+ * `standing` — which is exactly the mechanism that property exists for:
+ * grouping many dynamically-named transitions under one shared style. The
+ * selectors below target those classes. In a browser without
+ * view-transition-class support, the declaration is simply ignored and the
+ * native default view-transition timing applies — rows still reorder/collapse,
+ * just without this specific timing, never with the wrong family's timing. */
+::view-transition-group(.pick) {
+  animation-duration: var(--duration-slow);
+  animation-timing-function: var(--ease-spring);
+}
+::view-transition-group(.standing) {
+  animation-duration: var(--duration-base);
+  animation-timing-function: var(--ease-spring);
+}
+
+/* Opt in to native cross-document view transitions (DESIGN.md §6) — this is
+ * what lets a real browser navigation (a hard reload, or any nav Next.js
+ * doesn't intercept client-side, e.g. the installed PWA's initial launch)
+ * animate rather than flash-cut, on browsers that support it. It has no
+ * effect on Next.js App Router's own client-side <Link> transitions, which
+ * are same-document and driven by document.startViewTransition() in the
+ * components that need it (see PickList.tsx's comment) — this at-rule
+ * doesn't duplicate or override that; it only covers the case those calls
+ * don't reach.
+ */
+@view-transition {
+  navigation: auto;
+}
+
+/* Reveal on scroll, in pure CSS — no observers. Opt-in via [data-reveal] on
+ * whatever a component wants to animate in; unsupported browsers
+ * (@supports gate) just render the element in its resting, visible state
+ * with no animation, never stuck at opacity 0. */
+@supports (animation-timeline: view()) {
+  [data-reveal] {
+    animation: reveal-in linear both;
+    animation-timeline: view();
+    animation-range: entry 10% cover 30%;
+  }
+  @keyframes reveal-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Only the <video> element itself is motion — the poster underneath it is
+   * a still image, not motion, so it must keep standing in for ambience
+   * exactly as VideoBackdrop.tsx's comment promises. (VideoBackdrop.tsx's
+   * own `useReducedMotion()` check already skips rendering <video> at all
+   * once it resolves client-side; this is the CSS-only backstop for the
+   * gap before that effect runs — hiding the *whole* [data-video-bg]
+   * container here, poster included, used to remove the backdrop entirely
+   * instead of just the motion.) */
+  [data-video-bg] video {
+    display: none !important;
+  }
+
+  /* The `*, *::before, *::after` rule above does not reach these — view
+   * transition pseudo-elements render outside the flat tree and are only
+   * matched by their own pseudo-element selectors — so they need an
+   * explicit override to collapse instantly instead of springing. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.01ms !important;
+  }
+}
